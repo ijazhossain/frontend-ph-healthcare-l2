@@ -1,17 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
-"use client"
-import { getDoctors } from "@/app/(commonLayout)/consultation/_actions"
-import { useQuery } from "@tanstack/react-query"
+import { getDoctors } from "@/app/(commonLayout)/consultation/_actions";
+import { useQuery } from "@tanstack/react-query";
 
 const DoctorsList = () => {
-     const { data } = useQuery({
-    queryKey: ['doctors'],
+  const { data } = useQuery({
+    queryKey: ["doctors"],
     queryFn: () => getDoctors(),
-  })
-  console.log(data);
+  });
+
+  // Safe access using optional chaining and fallback
+  const doctors = data?.data ?? [];
+
   return (
-    <div>{data.data.map((doctor:any)=>(<p key={doctor.id}>{doctor.name}</p>))}</div>
-  )
-}
-export default DoctorsList
+    <div>
+      {doctors.map((doctor) => (
+        <div key={doctor.id}>{doctor.name}</div>
+      ))}
+    </div>
+  );
+};
+
+export default DoctorsList;
