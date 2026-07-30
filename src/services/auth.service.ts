@@ -1,5 +1,6 @@
 "use server"
 import { setTokenInCookies } from "@/lib/tokenUtils";
+import { cookies } from "next/headers";
 
 
 const BASE_API_URL=process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -34,4 +35,23 @@ export async function getNewTokenWithRefreshToken(refreshToken:string):Promise<b
         console.log("Error refreshing token:", error);
         return false;
     }
+}
+export async function getUserInfo(){
+    const cookieStore=await cookies();
+    const accessToken= cookieStore.get("accessToken")?.value;
+    if(!accessToken){
+        return null;
+    }
+    const res=await fetch(`${BASE_API_URL}/auth/me`,{
+        method:"GET",
+        headers:{
+            "Content-Type":"application/json",
+            Cookie:`accessToken=${accessToken}`
+        }
+    });
+    if(!res.ok){
+        return null;
+    }
+    const {data}=await res.json();
+    return data;
 }
