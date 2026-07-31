@@ -40,19 +40,15 @@ export async function getNewTokenWithRefreshToken(
 export async function getUserInfo() {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get("accessToken")?.value;
+  const sessionToken = cookieStore.get("better-auth.session_token")?.value;
   if (!accessToken) {
-    return {
-      id: "",
-      email: "",
-      role: "",
-      needPasswordChange: false,
-    };
+    return null;
   }
   const res = await fetch(`${BASE_API_URL}/auth/me`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-      Cookie: `accessToken=${accessToken}`,
+      Cookie: `accessToken=${accessToken}; better-auth.session_token=${sessionToken}`,
     },
   });
   if (!res.ok) {

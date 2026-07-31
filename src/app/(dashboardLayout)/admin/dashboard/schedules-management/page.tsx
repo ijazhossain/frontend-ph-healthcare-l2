@@ -1,6 +1,6 @@
 const SchedulesManagementPage = () => {
   return (
-    <div>SchedulesManagementPage</div>
+    <div>SchedulesManagementPages</div>
   )
 }
 export default SchedulesManagementPage
