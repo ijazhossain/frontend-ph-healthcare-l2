@@ -120,6 +120,20 @@ export async function proxy(request: NextRequest) {
     //Rule-5: Enforcing user to stay in reset password or verify email page if their needPasswordChange or isEmailVerified flags are not satisfied respectively
     if (accessToken) {
       const userInfo = await getUserInfo();
+      //need email verification scenario
+      if (userInfo.emailVerified === false) {
+        if (pathname !== "/verify-email") {
+          const verifyEmailUrl = new URL("/verify-email", request.url);
+          verifyEmailUrl.searchParams.set("email", userInfo.email);
+          return NextResponse.redirect(verifyEmailUrl);
+        }
+        return NextResponse.next();
+      }
+      if (userInfo && userInfo.emailVerified && pathname === "/verify-email") {
+        return NextResponse.redirect(
+          new URL(getDefaultDashboardRoute(userRole as UserRole), request.url),
+        );
+      }
       //need password change scenario
       if (userInfo.needPasswordChange) {
         if (pathname !== "/reset-password") {

@@ -31,16 +31,14 @@ export const loginAction = async (
       "/auth/login",
       parsedPayload.data,
     );
-    console.log(response.data);
+    // console.log(response.data);
 
     const { accessToken, refreshToken, token, user } = response.data;
     const { role, emailVerified, needPasswordChange, email } = user;
     await setTokenInCookies("accessToken", accessToken);
     await setTokenInCookies("refreshToken", refreshToken);
     await setTokenInCookies("better-auth.session_token", token, 24 * 60 * 60); // 1 day in seconds
-    if (!emailVerified) {
-      redirect("/verify-email");
-    } else if (needPasswordChange) {
+    if (needPasswordChange) {
       redirect(`/reset-password?email=${email}`);
     } else {
       // redirect(redirectPath || "/dashboard");
@@ -59,6 +57,9 @@ export const loginAction = async (
       error.digest.startsWith("NEXT_REDIRECT")
     ) {
       throw error;
+    }
+    if(error && error.response && error.response.data.message==="Email not verified"){
+      redirect(`/verify-email?email=${payload.email}`)
     }
     return {
       success: false,

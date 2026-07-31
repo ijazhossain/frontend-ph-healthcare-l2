@@ -6,7 +6,7 @@ const LoginPage = async({searchParams}:LoginParams) => {
   const params=await searchParams;
   const redirectPath=params.redirect || "/";
 
-  return <LoginForm/>;
+  return <LoginForm redirectPath={redirectPath}/>;
 };
 
 export default LoginPage;
