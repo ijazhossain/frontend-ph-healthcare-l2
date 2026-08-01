@@ -1,12 +1,13 @@
 "use client"
+
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { NavSection } from "@/types/dashboard.types";
 import { UserInfo } from "@/types/user.types";
 import { Menu, Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DashboardMobileSidebar from "./DashboardMobileSidebar";
-import { Input } from "@/components/ui/input";
 import NotificationDropdown from "./NotificationDropdown";
 import UserDropdown from "./UserDropdown";
 
@@ -15,44 +16,76 @@ interface DashboardNavbarProps {
   navItems: NavSection[];
   dashboardHome: string;
 }
+
 const DashboardNavbarContent = ({
   dashboardHome,
   navItems,
   userInfo,
 }: DashboardNavbarProps) => {
-    const[isOpen,setIsOpen]=useState(false)
-  return (
-    
-      <>
-        {/* Mobile menu toggle button */}
-<Sheet open={isOpen} onOpenChange={setIsOpen}>
-    <SheetTrigger
-  className="md:hidden"
-  render={
-    <Button>
-      <Menu />
-    </Button>
-  }
-/>
-<SheetContent side="left" className="w-64 p-0">
-  <DashboardMobileSidebar userInfo={userInfo} dashboardHome={dashboardHome} navItems={navItems}/>
-</SheetContent>
-</Sheet>
-        {/* Search component */}
-<div className="flex-1 flex items-center justify-end gap-2">
-  <div className="relative w-full max-w-md hidden sm:block">
-    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4"/>
-    <Input type="text" placeholder="Search..." className="pl-9"/>
-  </div>
-</div>
-        {/* Right side actions */}
+  const [isOpen, setIsOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
+  useEffect(() => {
+    const checkSmallerScreen = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setIsOpen(false);
+      }
+    };
+
+    checkSmallerScreen();
+    window.addEventListener("resize", checkSmallerScreen);
+
+    return () => {
+      window.removeEventListener("resize", checkSmallerScreen);
+    };
+  }, []);
+
+  return (
+    <header className="flex items-center gap-4 w-full px-4 py-3 border-b bg-background">
+      {/* Mobile Menu Toggle Button And Menu */}
+      <Sheet open={isOpen && isMobile} onOpenChange={setIsOpen}>
+        <SheetTrigger
+          className="md:hidden"
+          render={
+            <Button variant="outline" size="icon">
+              <Menu className="h-5 w-5" />
+            </Button>
+          }
+        />
+
+        <SheetContent side="left" className="w-64 p-0">
+          <DashboardMobileSidebar
+            userInfo={userInfo}
+            dashboardHome={dashboardHome}
+            navItems={navItems}
+          />
+        </SheetContent>
+      </Sheet>
+
+      {/* Full-Width Search Component */}
+      <div className="flex-1 flex items-center min-w-0">
+        <div className="relative w-full hidden sm:block">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input 
+            type="text" 
+            placeholder="Search..." 
+            className="w-full pl-9 pr-4" 
+          />
+        </div>
+      </div>
+
+      {/* Right Side Actions */}
+      <div className="flex items-center gap-2 shrink-0">
         {/* Notification */}
-<NotificationDropdown/>
-        {/* User dropdown */}
-<UserDropdown userInfo={userInfo}/>
-      </>
-    
+        <NotificationDropdown />
+
+        {/* User Dropdown */}
+        <UserDropdown userInfo={userInfo} />
+      </div>
+    </header>
   );
 };
+
 export default DashboardNavbarContent;
