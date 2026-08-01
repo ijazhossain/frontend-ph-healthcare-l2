@@ -9,7 +9,7 @@ const DashboardSidebar = async() => {
     const navItems:NavSection[]=getNavItemsByRole(userInfo.role)
     const dashboardHome=getDefaultDashboardRoute(userInfo.role)
   return (
-  <div><DashboardSidebarContent userInfo={userInfo} navItems={navItems} dashboardHome={dashboardHome}/></div>
+  <DashboardSidebarContent userInfo={userInfo} navItems={navItems} dashboardHome={dashboardHome}/>
 );
 };
 export default DashboardSidebar;
