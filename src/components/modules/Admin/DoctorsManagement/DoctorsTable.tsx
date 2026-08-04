@@ -1,71 +1,95 @@
 "use client";
 
 import DataTable from "@/components/shared/table/DataTable";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getDoctors } from "@/services/doctor.services";
 import { IDoctor } from "@/types/doctor.types";
 import { useQuery } from "@tanstack/react-query";
-import {
-    ColumnDef,
-    flexRender,
-    getCoreRowModel,
-    useReactTable
-} from "@tanstack/react-table";
+import { SortingState } from "@tanstack/react-table";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useMemo } from "react";
 import { doctorColumns } from "./doctorColumns";
 
+const getSortingStateFromParams = (queryParamsObject: { [key: string]: string | string[] | undefined }) => {
+  const sortBy = typeof queryParamsObject.sortBy === "string" ? queryParamsObject.sortBy : undefined;
+  const sortOrder = typeof queryParamsObject.sortOrder === "string" ? queryParamsObject.sortOrder : undefined;
 
-const DoctorsTable = ({queryString,queryParamsObject}:{queryString:string;queryParamsObject:{[key: string]: string | string[] | undefined }}) => {
+  if (!sortBy) return [];
 
-    // const doctorColumns:ColumnDef<IDoctor>[] = [
-    //   { accessorKey: "name", header: "Name" },
-    // //   { accessorKey: "specialization", header: "Specialization" },
-    //   { accessorKey: "experience", header: "Experience" },
-    // //   { accessorKey: "rating", header: "Rating" },
-    // ];
+  return [{ id: sortBy, desc: sortOrder === "desc" }];
+};
 
-   
+const DoctorsTable = ({
+  queryString,
+  queryParamsObject,
+}: {
+  queryString: string;
+  queryParamsObject: { [key: string]: string | string[] | undefined };
+}) => {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-    const { data : doctorDataResponse,isLoading } = useQuery({
-        queryKey: ["doctors",queryParamsObject],
-        queryFn: ()=>getDoctors(queryString)
-    });
+  const sorting = useMemo<SortingState>(() => {
+    const paramsFromUrl = Object.fromEntries(searchParams.entries());
+    const resolvedParams = Object.keys(paramsFromUrl).length > 0 ? paramsFromUrl : queryParamsObject;
 
-    const { data : doctors } = doctorDataResponse! || [];
-const handleView=(doctor:IDoctor)=>{
+    return getSortingStateFromParams(resolvedParams);
+  }, [queryParamsObject, searchParams]);
+
+  const currentQueryParams = useMemo(() => new URLSearchParams(searchParams.toString()), [searchParams]);
+  const currentQueryString = useMemo(() => currentQueryParams.toString(), [currentQueryParams]);
+  const effectiveQueryString = currentQueryString || queryString;
+
+  const { data: doctorDataResponse, isFetching } = useQuery({
+    queryKey: ["doctors", effectiveQueryString],
+    queryFn: () => getDoctors(effectiveQueryString),
+    placeholderData: (previousData) => previousData,
+  });
+
+  const doctors = doctorDataResponse?.data ?? [];
+
+  const handleView = (doctor: IDoctor) => {
     console.log("View doctor", doctor);
-}
-const handleEdit=(doctor:IDoctor)=>{
+  };
+
+  const handleEdit = (doctor: IDoctor) => {
     console.log("Edit doctor", doctor);
-}
-const handleDelete=(doctor:IDoctor)=>{
+  };
+
+  const handleDelete = (doctor: IDoctor) => {
     console.log("Delete doctor", doctor);
-}
+  };
 
-    const { getHeaderGroups, getRowModel } = useReactTable({
-       data: doctors,
-       columns: doctorColumns,
-       getCoreRowModel: getCoreRowModel(),
-    });   
+  const handleSortingChange = (nextSorting: SortingState) => {
+    const params = new URLSearchParams(searchParams.toString());
 
-    // console.log(doctorDataResponse?.data.map(doctor => doctor.name));
+    if (nextSorting.length > 0) {
+      const [sort] = nextSorting;
+      params.set("sortBy", sort.id);
+      params.set("sortOrder", sort.desc ? "desc" : "asc");
+    } else {
+      params.delete("sortBy");
+      params.delete("sortOrder");
+    }
 
-    // console.log(doctors);
+    const targetUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+    router.replace(targetUrl, { scroll: false });
+  };
+
   return (
-   <DataTable 
-   data={doctors}
-   columns={doctorColumns}
-   isLoading={isLoading}
-   emptyMessage="No doctors found"
-   actions={
-{
-    onView:handleView,
-    onEdit:handleEdit,
-    onDelete:handleDelete
-
-}
-   }
-   />
+    <DataTable
+      data={doctors}
+      columns={doctorColumns}
+      isLoading={isFetching}
+      emptyMessage="No doctors found"
+      sorting={{ state: sorting, onSortingChange: handleSortingChange }}
+      actions={{
+        onView: handleView,
+        onEdit: handleEdit,
+        onDelete: handleDelete,
+      }}
+    />
   );
-}
+};
 
-export default DoctorsTable
+export default DoctorsTable;
