@@ -14,7 +14,7 @@ import {
 import { doctorColumns } from "./doctorColumns";
 
 
-const DoctorsTable = () => {
+const DoctorsTable = ({queryString,queryParamsObject}:{queryString:string;queryParamsObject:{[key: string]: string | string[] | undefined }}) => {
 
     // const doctorColumns:ColumnDef<IDoctor>[] = [
     //   { accessorKey: "name", header: "Name" },
@@ -26,8 +26,8 @@ const DoctorsTable = () => {
    
 
     const { data : doctorDataResponse,isLoading } = useQuery({
-        queryKey: ["doctors"],
-        queryFn: getDoctors
+        queryKey: ["doctors",queryParamsObject],
+        queryFn: ()=>getDoctors(queryString)
     });
 
     const { data : doctors } = doctorDataResponse! || [];
@@ -47,9 +47,9 @@ const handleDelete=(doctor:IDoctor)=>{
        getCoreRowModel: getCoreRowModel(),
     });   
 
-    console.log(doctorDataResponse?.data.map(doctor => doctor.name));
+    // console.log(doctorDataResponse?.data.map(doctor => doctor.name));
 
-    console.log(doctors);
+    // console.log(doctors);
   return (
    <DataTable 
    data={doctors}

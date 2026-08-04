@@ -107,7 +107,7 @@ const DataTable = <TData,>({ data, columns, actions, emptyMessage, isLoading } :
             </TableHeader>
             <TableBody>
               { 
-                getRowModel().rows.length ? (
+                getRowModel()?.rows?.length ? (
                     
                  getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
