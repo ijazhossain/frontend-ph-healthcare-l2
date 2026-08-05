@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ColumnDef, flexRender, getCoreRowModel, getSortedRowModel, SortingState, useReactTable } from "@tanstack/react-table";
+import { ColumnDef, flexRender, getCoreRowModel, getPaginationRowModel, getSortedRowModel, SortingState, useReactTable } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal } from "lucide-react";
+import TablePagination from "./TablePagination";
 
 interface DataTableActions<TData> {
     onView ?: (data : TData) => void;
@@ -19,11 +20,19 @@ interface DataTableProps<TData> {
     sorting?:{
         state:SortingState;
         onSortingChange:(state:SortingState) => void;
-    }
+    };
+    pagination?: {
+      pageIndex: number;
+      pageSize: number;
+      pageCount: number;
+      totalItems: number;
+      onPageChange: (pageIndex: number) => void;
+      onPageSizeChange: (pageSize: number) => void;
+    };
 }
 
 
-const DataTable = <TData,>({ data, columns, actions, emptyMessage, isLoading,sorting } : DataTableProps<TData>) => {
+const DataTable = <TData,>({ data, columns, actions, emptyMessage, isLoading, sorting, pagination } : DataTableProps<TData>) => {
 
 
     const tableColumns : ColumnDef<TData>[] = actions ? [...columns,
@@ -77,21 +86,33 @@ const DataTable = <TData,>({ data, columns, actions, emptyMessage, isLoading,sor
         }
     ] : columns;
 
-    const { getHeaderGroups, getRowModel } = useReactTable({
+    const table = useReactTable({
       data,
       columns: tableColumns,
       getCoreRowModel: getCoreRowModel(),
-      getSortedRowModel:getSortedRowModel(),
-      manualSorting:Boolean(sorting),
-      state:{
-        ...sorting?
-      {sorting:sorting.state}:{}},
-      onSortingChange:sorting?(updater)=>{
-        const currentSortingState=sorting.state;
-const nextSortingState=typeof updater === "function"?updater(currentSortingState):updater;
-sorting.onSortingChange(nextSortingState)
-      }:undefined
+      getSortedRowModel: getSortedRowModel(),
+      getPaginationRowModel: getPaginationRowModel(),
+      manualSorting: Boolean(sorting),
+      manualPagination: Boolean(pagination),
+      pageCount: pagination?.pageCount,
+      state: {
+        ...sorting ? { sorting: sorting.state } : {},
+        ...pagination ? { pagination: { pageIndex: pagination.pageIndex, pageSize: pagination.pageSize } } : {},
+      },
+      onSortingChange: sorting ? (updater) => {
+        const currentSortingState = sorting.state;
+        const nextSortingState = typeof updater === "function" ? updater(currentSortingState) : updater;
+        sorting.onSortingChange(nextSortingState);
+      } : undefined,
+      onPaginationChange: pagination ? (updater) => {
+        const currentPagination = { pageIndex: pagination.pageIndex, pageSize: pagination.pageSize };
+        const nextPagination = typeof updater === "function" ? updater(currentPagination) : updater;
+        pagination.onPageChange(nextPagination.pageIndex);
+        pagination.onPageSizeChange(nextPagination.pageSize);
+      } : undefined,
     });
+
+    const { getHeaderGroups, getRowModel } = table;
     return (
       <div className="relative">
         {isLoading && (
@@ -169,6 +190,16 @@ sorting.onSortingChange(nextSortingState)
             </TableBody>
           </Table>
         </div>
+        {pagination && (
+          <TablePagination
+            pageIndex={pagination.pageIndex}
+            pageSize={pagination.pageSize}
+            pageCount={pagination.pageCount}
+            totalItems={pagination.totalItems}
+            onPageChange={pagination.onPageChange}
+            onPageSizeChange={pagination.onPageSizeChange}
+          />
+        )}
       </div>
     );
 }
