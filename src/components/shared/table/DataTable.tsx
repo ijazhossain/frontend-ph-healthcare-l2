@@ -1,8 +1,10 @@
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import { ColumnDef, flexRender, getCoreRowModel, getPaginationRowModel, getSortedRowModel, SortingState, useReactTable } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, MoreHorizontal, Search, X as XIcon } from "lucide-react";
 import TablePagination from "./TablePagination";
 
 interface DataTableActions<TData> {
@@ -17,6 +19,13 @@ interface DataTableProps<TData> {
     actions ?: DataTableActions<TData>;
     emptyMessage ?: string;
     isLoading ?: boolean;
+    filtering?: ReactNode;
+    search?: {
+      value: string;
+      onChange: (value: string) => void;
+      onClear: () => void;
+      placeholder?: string;
+    };
     sorting?:{
         state:SortingState;
         onSortingChange:(state:SortingState) => void;
@@ -32,7 +41,7 @@ interface DataTableProps<TData> {
 }
 
 
-const DataTable = <TData,>({ data, columns, actions, emptyMessage, isLoading, sorting, pagination } : DataTableProps<TData>) => {
+const DataTable = <TData,>({ data, columns, actions, emptyMessage, isLoading, filtering, search, sorting, pagination } : DataTableProps<TData>) => {
 
 
     const tableColumns : ColumnDef<TData>[] = actions ? [...columns,
@@ -121,6 +130,34 @@ const DataTable = <TData,>({ data, columns, actions, emptyMessage, isLoading, so
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
               <span className="text-sm text-muted-foreground">Loading...</span>
             </div>
+          </div>
+        )}
+
+        {(filtering || search) && (
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {filtering && <div>{filtering}</div>}
+            {search && (
+              <div className="relative w-full max-w-md">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search.value}
+                  onChange={(event) => search.onChange(event.target.value)}
+                  placeholder={search.placeholder ?? "Search..."}
+                  className="w-full pl-10 pr-10"
+                />
+                {search.value ? (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 -translate-y-1/2"
+                    onClick={search.onClear}
+                    aria-label="Clear search"
+                  >
+                    <XIcon className="h-4 w-4" />
+                  </Button>
+                ) : null}
+              </div>
+            )}
           </div>
         )}
 

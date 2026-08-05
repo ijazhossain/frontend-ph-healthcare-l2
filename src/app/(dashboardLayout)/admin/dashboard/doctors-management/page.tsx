@@ -1,4 +1,5 @@
 import DoctorsTable from "@/components/modules/Admin/DoctorsManagement/DoctorsTable";
+import { getAllSpecialties } from "@/services/specialty.service";
 import { getDoctors } from "@/services/doctor.services";
 import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
 
@@ -9,39 +10,32 @@ const DoctorsManagementPage = async({
 }) => {
   const queryParamsObject = await searchParams;
 
-  // console.log( queryParamsObjects);
-  /* 
-  {
-  searchTerm: "cardio",
-  page: "1",
-  limit: "10",
-  gender: "MALE",
-  "appointmentFee[gt]": "500",
-}
-  */
-  //?searchTerm=cardio&page=1&limit=10&gender=MALE&appointmentFee[gt]=500
-  // const queryString=Object.keys(queryParamsObjects).map((key)=>`${key}=${queryParamsObjects[key]}`).join("&");
-  // console.log(queryString);
-  //if the value is an array, we need to convert it to multiple query params with the same key
-  const queryString=Object.keys(queryParamsObject).map((key)=>{
-    const value =queryParamsObject[key];
-    if(Array.isArray(value)){
-      return value.map((v)=>`${key}=${v}`).join("&");
-    }
-    return `${key}=${value}`;
-  }).join("&");
-console.log(queryString,"querystring");
-  const queryClient=new QueryClient()
-   await queryClient.prefetchQuery({
-      queryKey: ["doctors",queryParamsObject],
-      queryFn: ()=>getDoctors(queryString),
-        staleTime: 1000 * 60 * 60, // 1 hour
-    gcTime: 1000 * 60 * 60 * 6, // 1 hour
-    });
+  const queryString = Object.entries(queryParamsObject)
+    .flatMap(([key, value]) =>
+      Array.isArray(value)
+        ? value.map((item) => `${encodeURIComponent(key)}=${encodeURIComponent(item)}`)
+        : value !== undefined
+        ? [`${encodeURIComponent(key)}=${encodeURIComponent(value)}`]
+        : []
+    )
+    .join("&");
+
+  const queryClient = new QueryClient();
+  await queryClient.prefetchQuery({
+    queryKey: ["specialties"],
+    queryFn: getAllSpecialties,
+  });
+  await queryClient.prefetchQuery({
+    queryKey: ["doctors", queryParamsObject],
+    queryFn: () => getDoctors(queryString),
+    staleTime: 1000 * 60 * 60,
+    gcTime: 1000 * 60 * 60 * 6,
+  });
+
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <DoctorsTable queryString={queryString} queryParamsObject={queryParamsObject}/>
+      <DoctorsTable queryString={queryString} queryParamsObject={queryParamsObject} specialties={queryClient.getQueryData(["specialties"]) || []} />
     </HydrationBoundary>
-  )
+  );
 }
 export default DoctorsManagementPage
